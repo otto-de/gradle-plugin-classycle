@@ -1,0 +1,49 @@
+// First, apply the publishing plugin
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+plugins {
+    id 'java'
+    id 'idea'
+    id "com.gradle.plugin-publish" version "0.9.10"
+}
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile gradleApi()
+    compile files('lib/classycle-1.4.2.jar')
+
+    testCompile 'junit:junit:4.12'
+}
+
+
+version = "1.2"
+group = "de.otto.shopoffice"
+sourceCompatibility = 1.7
+
+jar {
+    from zipTree('lib/classycle-1.4.2.jar')
+}
+
+pluginBundle {
+    website = 'https://github.com/otto-de/sho_gradle-plugin-classycle'
+    vcsUrl = 'https://github.com/otto-de/sho_gradle-plugin-classycle'
+    description = 'classcycle plugin'
+    tags = ['classcycle']
+
+    plugins {
+        classcyclePlugin {
+            id = 'de.otto.classycle'
+            displayName = 'classcycle plugin'
+        }
+    }
+}
