@@ -37,13 +37,13 @@ jar {
 pluginBundle {
     website = 'https://github.com/otto-de/gradle-plugin-classycle'
     vcsUrl = 'https://github.com/otto-de/gradle-plugin-classycle'
-    description = 'classcycle plugin'
-    tags = ['classcycle']
+    description = 'classycle plugin'
+    tags = ['classycle']
 
     plugins {
-        classcyclePlugin {
+        classyclePlugin {
             id = 'de.otto.classycle'
-            displayName = 'classcycle plugin'
+            displayName = 'classycle plugin'
         }
     }
 }
