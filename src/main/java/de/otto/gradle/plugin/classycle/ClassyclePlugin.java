@@ -1,6 +1,8 @@
 package de.otto.gradle.plugin.classycle;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.tools.ant.types.FileSet;
 import org.gradle.api.Action;
@@ -134,10 +136,21 @@ public class ClassyclePlugin implements Plugin<Project> {
             }
 
             // check for classesDirs
+            final List<File> existingClassesDirs = new ArrayList<>();
             for (final File classesDir : classesDirs) {
-                if (!classesDir.isDirectory()) {
-                    throw new RuntimeException("Classes directory doesn't exist: " + classesDir);
+                if (classesDir.isDirectory()) {
+                    existingClassesDirs.add(classesDir);
+                } else {
+                    log.warn("Classycle: source directory does not exist: " + classesDir.getAbsolutePath());
                 }
+            }
+
+            if (existingClassesDirs.isEmpty()) {
+                final StringBuilder sb = new StringBuilder();
+                for (final File file : classesDirs) {
+                    sb.append(file.getAbsolutePath()).append(" ");
+                }
+                throw new RuntimeException("Classycle: classes directories do not exists: " + sb.toString());
             }
 
             // create location for report file
@@ -150,7 +163,7 @@ public class ClassyclePlugin implements Plugin<Project> {
                 classycle.setMergeInnerClasses(true);
                 classycle.setDefinitionFile(definitionFile);
                 classycle.setProject(task.getProject().getAnt().getAntProject());
-                for (final File classesDir : classesDirs) {
+                for (final File classesDir : existingClassesDirs) {
                     final FileSet fileSet = new FileSet();
                     fileSet.setDir(classesDir);
                     fileSet.setIncludes("**/*.class");
