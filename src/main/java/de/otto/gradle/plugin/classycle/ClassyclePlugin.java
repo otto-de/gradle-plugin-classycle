@@ -100,7 +100,8 @@ public class ClassyclePlugin implements Plugin<Project> {
 
         // in case no sourceSet is defined, use main SourceSet...
         if (extension.getSourceSets().isEmpty()) {
-            final SourceSet mainSourceSet = getJavaPluginConvention(project).getSourceSets().getByName("main");
+            final SourceSet mainSourceSet = getJavaPluginConvention(project).getSourceSets()
+                    .getByName(SourceSet.MAIN_SOURCE_SET_NAME);
             if (mainSourceSet == null) {
                 throw new GradleException("no source set specified and no main source set found");
             }
