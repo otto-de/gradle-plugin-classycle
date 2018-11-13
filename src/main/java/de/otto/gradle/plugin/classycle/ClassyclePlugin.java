@@ -15,6 +15,7 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.logging.ConsoleRenderer;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
 import classycle.ant.DependencyCheckingTask;
 
@@ -147,7 +148,7 @@ public class ClassyclePlugin implements Plugin<Project> {
                 classycle.add(fileSet);
                 classycle.execute();
             } catch (Exception e) {
-                throw new RuntimeException("Classycle check failed: " + e.getMessage()
+                throw new GradleException("Classycle check failed: " + e.getMessage()
                         + ". See report at " + new ConsoleRenderer().asClickableFileUrl(reportFile), e);
             }
         }
