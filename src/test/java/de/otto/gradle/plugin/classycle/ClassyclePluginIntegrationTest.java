@@ -126,6 +126,43 @@ public class ClassyclePluginIntegrationTest {
         assertTrue(reportFileExists());
     }
 
+    @Test
+    public void shouldEvaluateSuccessfullyWithGradle5_0() throws IOException {
+
+        // given
+        createBuildFile();
+        createJavaSources();
+        createNonConflictingClassycleDefinitionsFile();
+
+        BuildResult result = GradleRunner.create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withGradleVersion("5.0-rc-1")
+                .withPluginClasspath()
+                .withArguments("classycle")
+                .build();
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":classycle").getOutcome());
+        assertFalse(reportFileExists());
+    }
+
+    @Test
+    public void shouldEvaluateWithErrorWithGradle5_0() throws IOException {
+
+        // given
+        createBuildFile();
+        createJavaSources();
+        createConflictingClassycleDefinitionsFile();
+
+        BuildResult result = GradleRunner.create()
+                .withProjectDir(testProjectDir.getRoot())
+                .withGradleVersion("5.0-rc-1")
+                .withPluginClasspath()
+                .withArguments("classycle")
+                .buildAndFail();
+
+        assertTrue(reportFileExists());
+    }
+
     private void writeFile(File destination, String content) throws IOException {
         try (BufferedWriter output = new BufferedWriter(new FileWriter(destination))) {
             output.write(content);

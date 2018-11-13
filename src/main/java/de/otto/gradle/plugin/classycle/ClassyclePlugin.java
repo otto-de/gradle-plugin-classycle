@@ -8,6 +8,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
@@ -15,7 +16,6 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.logging.ConsoleRenderer;
-import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
 import classycle.ant.DependencyCheckingTask;
 
@@ -55,21 +55,27 @@ public class ClassyclePlugin implements Plugin<Project> {
     private Task createClassycleTask(final Project project, final ClassycleExtension extension, final SourceSet sourceSet) {
 
         final String taskName = sourceSet.getTaskName("classycle", null);
-        final File classesDir = sourceSet.getOutput().getClassesDir();
+        final FileCollection classesDirs = sourceSet.getOutput().getClassesDirs();
         final File reportFile = getReportingExtension(project).file("classycle_" + sourceSet.getName() + ".txt");
 
         final Task task = project.task(taskName);
-        task.getInputs().files(classesDir, extension.getDefinitionFile());
+        task.getInputs().files(classesDirs, extension.getDefinitionFile());
         task.getOutputs().file(reportFile);
-        task.doLast(new ClassyclePlugin.ClassycleAction(classesDir, reportFile, extension));
+        task.doLast(new ClassyclePlugin.ClassycleAction(classesDirs, reportFile, extension));
 
         // the classycle task depends on the corresponding classes task
         final String classesTask = sourceSet.getClassesTaskName();
         task.dependsOn(classesTask);
 
-        project.getLogger()
-                .debug("Created classycle task: " + taskName + ", report file: " + reportFile + ", depends on: "
-                        + classesTask + " - sourceSetDir: " + sourceSet.getOutput().getClassesDir());
+        if (project.getLogger().isDebugEnabled()) {
+            final StringBuilder sb = new StringBuilder();
+            for (final File file : classesDirs) {
+                sb.append(file.getAbsolutePath()).append(" ");
+            }
+            project.getLogger()
+                    .debug("Created classycle task: " + taskName + ", report file: " + reportFile + ", depends on: "
+                            + classesTask + " - sourceSetDirs: " + sb.toString());
+        }
 
         return task;
     }
@@ -106,12 +112,12 @@ public class ClassyclePlugin implements Plugin<Project> {
 
     private static class ClassycleAction implements Action<Task> {
 
-        private final File classesDir;
+        private final FileCollection classesDirs;
         private final File reportFile;
         private final ClassycleExtension extension;
 
-        private ClassycleAction(final File classesDir, final File reportFile, final ClassycleExtension extension) {
-            this.classesDir = classesDir;
+        private ClassycleAction(final FileCollection classesDirs, final File reportFile, final ClassycleExtension extension) {
+            this.classesDirs = classesDirs;
             this.reportFile = reportFile;
             this.extension = extension;
         }
@@ -126,26 +132,30 @@ public class ClassyclePlugin implements Plugin<Project> {
                 throw new RuntimeException("Classycle definition file not found: " + definitionFile);
             }
 
-            // check for classesDir
-            if (!classesDir.isDirectory()) {
-                throw new RuntimeException("Classes directory doesn't exist: " + classesDir);
+            // check for classesDirs
+            for (final File classesDir : classesDirs) {
+                if (!classesDir.isDirectory()) {
+                    throw new RuntimeException("Classes directory doesn't exist: " + classesDir);
+                }
             }
 
             // create location for report file
             reportFile.getParentFile().mkdirs();
             try {
-                log.debug("Running classycle analysis on: " + classesDir);
+                log.debug("Running classycle analysis");
                 final DependencyCheckingTask classycle = new DependencyCheckingTask();
                 classycle.setReportFile(reportFile);
                 classycle.setFailOnUnwantedDependencies(true);
                 classycle.setMergeInnerClasses(true);
                 classycle.setDefinitionFile(definitionFile);
                 classycle.setProject(task.getProject().getAnt().getAntProject());
-                final FileSet fileSet = new FileSet();
-                fileSet.setDir(classesDir);
-                fileSet.setIncludes("**/*.class");
-                fileSet.setProject(classycle.getProject());
-                classycle.add(fileSet);
+                for (final File classesDir : classesDirs) {
+                    final FileSet fileSet = new FileSet();
+                    fileSet.setDir(classesDir);
+                    fileSet.setIncludes("**/*.class");
+                    fileSet.setProject(classycle.getProject());
+                    classycle.add(fileSet);
+                }
                 classycle.execute();
             } catch (Exception e) {
                 throw new GradleException("Classycle check failed: " + e.getMessage()
