@@ -37,7 +37,7 @@ The Java **check task is altered and depends on the classycle task**.
 ```groovy
 plugins {
     id 'java'
-    id 'de.otto.classycle' version '1.3'
+    id 'de.otto.classycle' version '1.4'
 }
 
 // if you want to override the default config, otherwise you can omit this section
